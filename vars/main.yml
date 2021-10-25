@@ -1,0 +1,14 @@
+---
+# vars file for sudo
+
+# Regular expression to validate paths
+pathre: '^(?:[\/])$|^(?:[\/][a-zA-Z0-9_.-]+)+[\/]?$'
+
+# Not being used, but here for reference
+_sudo_default_groups:
+  default: ['wheel']
+  Debian: ['admin', 'sudo']
+  Ubuntu: ['admin', 'sudo']
+
+sudo_default_groups: "{{ _sudo_default_groups[ansible_distribution ~ '-' ~ ansible_distribution_major_version] |
+              default(_sudo_default_groups[ansible_distribution]) | default(_sudo_default_groups['default']) }}"

@@ -1,0 +1,39 @@
+---
+
+##
+# This task file checks all the variables created to customize SUDO,
+# and plataform specific variables.
+##
+
+- name: Ensure sudo_config_file_name is specified and valid
+  assert:
+    quiet: yes
+    that:
+      - sudo_config_file_name is defined
+      - sudo_config_file_name is string
+      - sudo_config_file_name is regex('[a-zA-Z0-9_]+')  # Composed of leters, numbers and underline
+    msg: "sudo_config_file_name must be speficied, must be a string and must contain only leters, numbers and underline"
+
+- name: Check if sudo_log value is valid.
+  assert:
+    quiet: yes
+    that:
+      - sudo_log is regex(pathre)  # Check if it is a directory
+    msg: "Invalid sudo log path ({{ sudo_log }})."
+  when: sudo_log is defined
+
+- name: Check if sudo_cmd_use_pty is valid
+  assert:
+    quiet: yes
+    that:
+      - sudo_cmd_use_pty | type_debug == 'bool'
+    msg: "Invalid argument for sudo_cmd_use_pty. It must be a boolean (yes, no, true, false) -- without quotes."
+  when: sudo_cmd_use_pty is defined
+
+- name: Validate sudo_secure_path specified paths
+  assert:
+    quiet: yes
+    that:
+      - item is regex(pathre)  # Only allow absolute paths for security
+  loop: "{{ sudo_secure_path.split(':') }}"
+  when: sudo_secure_path is defined

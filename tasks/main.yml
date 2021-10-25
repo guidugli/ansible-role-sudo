@@ -1,0 +1,8 @@
+---
+# tasks file for sudo
+
+- name: Validate provided variables and set os dependent variables
+  import_tasks: asserts.yml
+
+- name: Import tasks to configure SUDO
+  import_tasks: sudo.yml

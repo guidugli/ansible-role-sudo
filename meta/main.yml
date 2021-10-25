@@ -1,0 +1,31 @@
+---
+dependencies: []
+
+galaxy_info:
+  role_name: sudo
+  author: guidugli
+  description: Install and configure sudo on linux
+  company: Creuzo Tech
+  license: "license (BSD, MIT)"
+  min_ansible_version: 2.9
+
+  platforms:
+    - name: EL
+      versions:
+        - 8
+        - 7
+    - name: Fedora
+      versions:
+        - 34
+    - name: Ubuntu
+      versions:
+        - focal
+        - bionic
+    - name: Debian
+      versions:
+        - bullseye
+        - buster
+
+  galaxy_tags:
+    - sudo
+    - sudoer
