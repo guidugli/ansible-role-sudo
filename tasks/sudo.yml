@@ -4,14 +4,14 @@
 ##
 
 - name: Install sudo if not already installed
-  package:
+  ansible.builtin.package:
     name: sudo
     state: present
     update_cache: yes
 
 # Make sure the sudoers file includes the requirement to use pty
 - name: Ensure sudo commands use pty
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: "/etc/sudoers.d/{{ sudo_config_file_name }}"
     regexp: '^Defaults\s*use_pty'
     line: "Defaults use_pty"
@@ -23,7 +23,7 @@
 
 # Make sure the sudoers file includes the requirement to log to a file
 - name: Ensure sudo log file exists
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: "/etc/sudoers.d/{{ sudo_config_file_name }}"
     regexp: '^Defaults\s+(log_host,\s*log_year,)?\slogfile='
     line: 'Defaults log_host, log_year, logfile={{ sudo_log }}'
@@ -33,7 +33,7 @@
   when: sudo_log is defined
 
 - name: Set secure_path
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: "/etc/sudoers.d/{{ sudo_config_file_name }}"
     regexp: '^Defaults\s+secure_path='
     line: 'Defaults secure_path="{{ sudo_secure_path }}"'

@@ -6,7 +6,7 @@
 ##
 
 - name: Ensure sudo_config_file_name is specified and valid
-  assert:
+  ansible.builtin.assert:
     quiet: yes
     that:
       - sudo_config_file_name is defined
@@ -15,7 +15,7 @@
     msg: "sudo_config_file_name must be speficied, must be a string and must contain only leters, numbers and underline"
 
 - name: Check if sudo_log value is valid.
-  assert:
+  ansible.builtin.assert:
     quiet: yes
     that:
       - sudo_log is regex(pathre)  # Check if it is a directory
@@ -23,7 +23,7 @@
   when: sudo_log is defined
 
 - name: Check if sudo_cmd_use_pty is valid
-  assert:
+  ansible.builtin.assert:
     quiet: yes
     that:
       - sudo_cmd_use_pty | type_debug == 'bool'
@@ -31,7 +31,7 @@
   when: sudo_cmd_use_pty is defined
 
 - name: Validate sudo_secure_path specified paths
-  assert:
+  ansible.builtin.assert:
     quiet: yes
     that:
       - item is regex(pathre)  # Only allow absolute paths for security
