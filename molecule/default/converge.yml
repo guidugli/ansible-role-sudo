@@ -3,7 +3,7 @@
   hosts: all
   pre_tasks:
 
-    - name: update Ubuntu/Debian systems
+    - name: Update Ubuntu/Debian systems
       ansible.builtin.apt:
 #        upgrade: dist
         update_cache: true
