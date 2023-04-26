@@ -44,6 +44,7 @@ jobs:
     strategy:
       matrix:
         distro:
+          - rockylinux9
           - centos8
           - centos7
           - ubuntu2204
@@ -51,10 +52,9 @@ jobs:
           - ubuntu1804
           - debian11
           - debian10
-          - fedora34
-          - fedora35
-          - fedora36
+          - fedora38
           - fedora37
+          - fedora36
 
     steps:
       - name: Check out the codebase.
