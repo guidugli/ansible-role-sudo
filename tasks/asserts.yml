@@ -14,6 +14,24 @@
       - sudo_config_file_name is regex('[a-zA-Z0-9_]+')  # Composed of leters, numbers and underline
     msg: "sudo_config_file_name must be speficied, must be a string and must contain only leters, numbers and underline"
 
+- name: Check sudo_admin_group variable
+  ansible.builtin.assert:
+    quiet: yes
+    that:
+      - sudo_admin_group is defined
+      - sudo_admin_group is string
+      - sudo_admin_group is regex('[a-zA-Z0-9_]+')
+    msg: "sudo_admin_group must be specified, must be a string and must only contain letters, numbers and underline"
+
+
+- name: Check sudo_admin_password_required variable
+  ansible.builtin.assert:
+    quiet: yes
+    that:
+      - sudo_admin_password_required is defined
+      - sudo_admin_password_required | type_debug == 'bool'
+    msg: "sudo_admin_password_required must be specified and must be a boolean"
+
 - name: Check if sudo_log value is valid.
   ansible.builtin.assert:
     quiet: yes
@@ -22,18 +40,11 @@
     msg: "Invalid sudo log path ({{ sudo_log }})."
   when: sudo_log is defined
 
-- name: Check if sudo_cmd_use_pty is valid
+- name: Validate sudo_default_parameters
   ansible.builtin.assert:
     quiet: yes
     that:
-      - sudo_cmd_use_pty | type_debug == 'bool'
-    msg: "Invalid argument for sudo_cmd_use_pty. It must be a boolean (yes, no, true, false) -- without quotes."
-  when: sudo_cmd_use_pty is defined
-
-- name: Validate sudo_secure_path specified paths
-  ansible.builtin.assert:
-    quiet: yes
-    that:
-      - item is regex(pathre)  # Only allow absolute paths for security
-  loop: "{{ sudo_secure_path.split(':') }}"
-  when: sudo_secure_path is defined
+      - sudo_default_parameters is sequence
+  when:
+    - sudo_default_parameters is defined
+    - sudo_default_parameters | length > 0

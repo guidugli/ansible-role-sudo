@@ -9,17 +9,17 @@
     state: present
     update_cache: yes
 
-# Make sure the sudoers file includes the requirement to use pty
-- name: Ensure sudo commands use pty
-  ansible.builtin.lineinfile:
-    path: "/etc/sudoers.d/{{ sudo_config_file_name }}"
-    regexp: '^Defaults\s*use_pty'
-    line: "Defaults use_pty"
-    create: yes
-    mode: '0400'
-    state: "{{ sudo_cmd_use_pty | bool | ternary('present','absent') }}"
+# Create a new sudoers file
+- name: Create new sudoers file
+  ansible.builtin.template:
+    src: sudoers.j2
+    dest: "/etc/sudoers"
+    backup: yes
+    owner: root
+    group: root
+    mode: '0440'
+    force: true
     validate: /usr/sbin/visudo -cf %s
-  when: sudo_cmd_use_pty is defined
 
 # Make sure the sudoers file includes the requirement to log to a file
 - name: Ensure sudo log file exists
@@ -27,17 +27,22 @@
     path: "/etc/sudoers.d/{{ sudo_config_file_name }}"
     regexp: '^Defaults\s+(log_host,\s*log_year,)?\slogfile='
     line: 'Defaults log_host, log_year, logfile={{ sudo_log }}'
-    mode: '0400'
+    mode: '0440'
     create: yes
+    owner: root
+    group: root
     validate: /usr/sbin/visudo -cf %s
   when: sudo_log is defined
 
-- name: Set secure_path
+- name: Set admin group rule
+  vars:
+    lstr: "%{{ sudo_admin_group }} ALL=(ALL:ALL)       {{ 'NOPASSWD:' if not sudo_admin_password_required }} ALL"
   ansible.builtin.lineinfile:
     path: "/etc/sudoers.d/{{ sudo_config_file_name }}"
-    regexp: '^Defaults\s+secure_path='
-    line: 'Defaults secure_path="{{ sudo_secure_path }}"'
-    mode: '0400'
+    regexp: "^%{{ sudo_admin_group }} "
+    line: "{{ lstr }}"
+    mode: '0440'
     create: yes
+    owner: root
+    group: root
     validate: /usr/sbin/visudo -cf %s
-  when: sudo_secure_path is defined
