@@ -17,22 +17,30 @@ Any setting will be written in files on sudoers.d directory. Choose a name to ho
 
     sudo_admin_group: admin
 
-If specified, the default groups like wheel, admin, sudo will be disabled, and the specified group enabled, so users of the specified group are able to sudo to any command.
+Specify admin group that can run any command as root
+
+    sudo_admin_password_required: true
+
+Specify is the admin group is required to enter a password or not when running sudo
 
     sudo_log: /var/log/sudo.log
 
 If defined, add sudo configuration to generate log at the defined location.
 
-    sudo_cmd_use_pty: yes
+    sudo_default_parameters:
+      - "!visiblepw"
+      - always_set_home
+      - match_group_by_gid
+      - env_reset
+      - env_keep =  "COLORS DISPLAY HOSTNAME HISTSIZE KDEDIR LS_COLORS"
+      - env_keep += "MAIL QTDIR USERNAME LANG LC_ADDRESS LC_CTYPE"
+      - env_keep += "LC_COLLATE LC_IDENTIFICATION LC_MEASUREMENT LC_MESSAGES"
+      - env_keep += "LC_MONETARY LC_NAME LC_NUMERIC LC_PAPER LC_TELEPHONE"
+      - env_keep += "LC_TIME LC_ALL LANGUAGE LINGUAS _XKB_CHARSET XAUTHORITY"
+      - secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"
+      - use_pty
 
-A few times, attackers can run a malicious program (such as a virus or malware) using sudo, which would again fork a background process that remains on the user’s terminal device even when the main program has finished executing. To avoid such a scenario, you can configure sudo to run other commands only from a psuedo-pty using the use_pty parameter, whether I/O logging is turned on or not, set variable below to yes. Setting this variable to no will only cause the role to remove use_pty entry from the custom sudo file.
-
-    #sudo_secure_path: '/sbin:/bin:/usr/sbin:/usr/bin'
-
-This is the path used for every command run with sudo, it has two importances:
-- Used when a system administrator does not trust sudo users to have a secure PATH environment variable
-- To separate “root path” and “user path”, only users defined by exempt_group are not affected by this setting.
-
+Set the default parameters for sudo. Read sudoers man page for more information. Also check security guides for reference on secure settings.
 
 
 Dependencies
