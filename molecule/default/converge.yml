@@ -1,14 +1,5 @@
 ---
 - name: Converge
   hosts: all
-  pre_tasks:
-
-    - name: Update Ubuntu/Debian systems
-      ansible.builtin.apt:
-#        upgrade: dist
-        update_cache: true
-        cache_valid_time: 3600
-      when: ansible_pkg_mgr == "apt"
-
   roles:
     - role: guidugli.sudo

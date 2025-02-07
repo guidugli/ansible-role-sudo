@@ -1,7 +1,7 @@
 Ansible Role: sudo
 =========
 
-An Ansible Role that install and configure sudo on RHEL/CentOS, Fedora and Debian/Ubuntu.
+An Ansible Role that install and do basic configuration of sudo on RHEL/CentOS, Fedora and Debian/Ubuntu.
 
 Requirements
 ------------

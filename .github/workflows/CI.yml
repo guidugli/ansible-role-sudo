@@ -3,6 +3,7 @@ name: CI
 
 # Controls when the workflow will run
 'on':
+  pull_request:
   push:
     branches: [ main ]
 
@@ -12,23 +13,23 @@ name: CI
   schedule:
     - cron: "0 5 * * 0"
 
-defaults:
-  run:
-    working-directory: 'guidugli.sudo'
-
 jobs:
 
   lint:
     name: Lint
-    runs-on: ubuntu-20.04
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ vars.WORKING_DIR }}
+    runs-on: ubuntu-latest
     steps:
       - name: Check out the codebase.
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
-          path: 'guidugli.sudo'
+          path: ${{ vars.WORKING_DIR }}
 
       - name: Set up Python 3.
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
@@ -37,37 +38,39 @@ jobs:
 
       - name: Lint code.
         run: |
-          yamllint .
+          yamllint -c .yamllint .
+
   molecule:
     name: Molecule
-    runs-on: ubuntu-20.04
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ vars.WORKING_DIR }}
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         distro:
-          - rockylinux9
-          - centos8
-          - centos7
+          - ubuntu2404
           - ubuntu2204
-          - ubuntu2004
-          - ubuntu1804
+          - debian12
           - debian11
-          - debian10
+          - fedora41
           - fedora40
-          - fedora39
 
     steps:
+
       - name: Check out the codebase.
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
-          path: 'guidugli.sudo'
+          path: ${{ vars.WORKING_DIR }}
 
       - name: Set up Python 3.
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
       - name: Install test dependencies.
-        run: pip3 install ansible molecule molecule-plugins[docker] docker ansible-lint[yamllint]
+        run: pip3 install ansible molecule molecule-plugins[docker] docker
 
       - name: Run Molecule tests.
         run: molecule test
