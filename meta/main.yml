@@ -12,8 +12,8 @@ galaxy_info:
   platforms:
     - name: Fedora
       versions:
+        - '42'
         - '41'
-        - '40'
     - name: Ubuntu
       versions:
         - noble

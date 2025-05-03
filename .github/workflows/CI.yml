@@ -54,8 +54,8 @@ jobs:
           - ubuntu2204
           - debian12
           - debian11
+          - fedora42
           - fedora41
-          - fedora40
 
     steps:
 
