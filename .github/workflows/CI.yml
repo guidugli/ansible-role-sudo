@@ -52,10 +52,10 @@ jobs:
         distro:
           - ubuntu2404
           - ubuntu2204
+          - debian13
           - debian12
-          - debian11
+          - fedora43
           - fedora42
-          - fedora41
 
     steps:
 
