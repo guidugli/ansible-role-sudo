@@ -9,6 +9,19 @@
     state: present
     update_cache: yes
 
+- name: Set admin group rule
+  vars:
+    lstr: "%{{ sudo_admin_group }} ALL=(ALL:ALL)       {{ 'NOPASSWD:' if not sudo_admin_password_required }} ALL"
+  ansible.builtin.lineinfile:
+    path: "/etc/sudoers.d/{{ sudo_config_file_name }}"
+    regexp: "^%{{ sudo_admin_group }} "
+    line: "{{ lstr }}"
+    mode: '0440'
+    create: yes
+    owner: root
+    group: root
+    validate: /usr/sbin/visudo -cf %s
+
 # Create a new sudoers file
 - name: Create new sudoers file
   ansible.builtin.template:
@@ -33,16 +46,3 @@
     group: root
     validate: /usr/sbin/visudo -cf %s
   when: sudo_log is defined
-
-- name: Set admin group rule
-  vars:
-    lstr: "%{{ sudo_admin_group }} ALL=(ALL:ALL)       {{ 'NOPASSWD:' if not sudo_admin_password_required }} ALL"
-  ansible.builtin.lineinfile:
-    path: "/etc/sudoers.d/{{ sudo_config_file_name }}"
-    regexp: "^%{{ sudo_admin_group }} "
-    line: "{{ lstr }}"
-    mode: '0440'
-    create: yes
-    owner: root
-    group: root
-    validate: /usr/sbin/visudo -cf %s

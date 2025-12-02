@@ -17,7 +17,8 @@ Any setting will be written in files on sudoers.d directory. Choose a name to ho
 
     sudo_admin_group: admin
 
-Specify admin group that can run any command as root
+Specify admin group that can run any command as root. Recommended to create the group and assign the users before running
+this role to prevent errors.
 
     sudo_admin_password_required: true
 
