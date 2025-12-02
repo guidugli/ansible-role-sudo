@@ -1,8 +1,13 @@
 ---
 # tasks file for sudo
 
-- name: Validate provided variables and set os dependent variables
-  ansible.builtin.import_tasks: asserts.yml
+- name: Execute role tasks
+  block:
 
-- name: Import tasks to configure SUDO
-  ansible.builtin.import_tasks: sudo.yml
+    - name: Validate provided variables and set os dependent variables
+      ansible.builtin.import_tasks: asserts.yml
+    
+    - name: Import tasks to configure SUDO
+      ansible.builtin.import_tasks: sudo.yml
+
+  become: yes
