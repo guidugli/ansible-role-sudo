@@ -72,6 +72,8 @@
     owner: root
     group: root
     mode: '0600'
+    access_time: preserve
+    modification_time: preserve
   when: sudo_log is defined
 
 - name: Ensure sudo logfile setting is configured
