@@ -1,13 +1,21 @@
 ---
-# tasks file for sudo
+# tasks/main.yml
+# Purpose:
+#   Validate inputs, then configure sudo.
 
-- name: Execute role tasks
-  block:
+- name: Validate role inputs with argument_specs
+  ansible.builtin.validate_argument_spec:
+    argument_spec: "{{ (lookup('ansible.builtin.file', role_path ~ '/meta/argument_specs.yml') | from_yaml).argument_specs.main.options }}"
+    provided_arguments:
+      sudo_config_file_name: "{{ sudo_config_file_name | default(omit) }}"
+      sudo_admin_group: "{{ sudo_admin_group | default(omit) }}"
+      sudo_admin_password_required: "{{ sudo_admin_password_required | default(omit) }}"
+      sudo_log: "{{ sudo_log | default(omit) }}"
+      sudo_default_parameters: "{{ sudo_default_parameters | default(omit) }}"
 
-    - name: Validate provided variables and set os dependent variables
-      ansible.builtin.import_tasks: asserts.yml
-    
-    - name: Import tasks to configure SUDO
-      ansible.builtin.import_tasks: sudo.yml
+- name: Run extra assertion checks
+  ansible.builtin.import_tasks: asserts.yml
 
-  become: yes
+- name: Import tasks to configure SUDO
+  ansible.builtin.import_tasks: sudo.yml
+

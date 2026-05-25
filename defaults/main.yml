@@ -1,18 +1,18 @@
 ---
 # defaults file for sudo
+#
+# Security posture:
+# - Keeps sudo command auditing enabled by default
+# - Uses PTY for sudo commands (CIS-oriented)
+# - Enables I/O logging for better forensic visibility
+# - Reduces sudo credential lifetime
+# - Keeps restrictive secure_path and umask defaults
+#
 
-# If a variable is not defined, no change will happen to
-# the setting that the variable controls. For example,
-# if sudo_log is not defined, no task will be executed
-# to set sudo_log
-
-# Any setting will be written in files on sudoers.d directory
-# Choose a name to hold the settings in the scope of this role.
+# Any role-managed sudoers settings are written under /etc/sudoers.d using this file name.
 sudo_config_file_name: 01_ansible
 
-# if specified, the default groups like wheel, admin, sudo will
-# be disabled, and the specified group enabled, so users of the
-# specified group are able to sudo to any command.
+# Group granted broad sudo access.
 sudo_admin_group: admin
 
 # Specify if password will be required for admin group
@@ -35,3 +35,6 @@ sudo_default_parameters:
   - env_keep += "LC_TIME LC_ALL LANGUAGE LINGUAS _XKB_CHARSET XAUTHORITY"
   - secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"
   - use_pty
+  - timestamp_timeout=5
+  - passwd_timeout=1
+  - umask=0077

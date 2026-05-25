@@ -1,0 +1,22 @@
+---
+- name: Destroy systemd scenario containers and images (podman)
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    instances: "{{ groups.get('molecule', []) }}"
+
+  tasks:
+    - name: Remove containers
+      containers.podman.podman_container:
+        name: "{{ item }}"
+        state: absent
+        force_delete: true
+      loop: "{{ instances }}"
+
+    - name: Remove committed systemd images (optional but recommended)
+      containers.podman.podman_image:
+        name: "localhost/molecule-systemd-{{ item }}"
+        tag: "latest"
+        state: absent
+      loop: "{{ instances }}"

@@ -1,50 +1,50 @@
 ---
+# tasks/asserts.yml
+#
+# Purpose:
+#   Extra validation that is not fully covered by meta/argument_specs.yml.
+#
+# Notes:
+#   - Basic type/required validation should be handled by validate_argument_spec
+#     using meta/argument_specs.yml.
+#   - This file keeps only regex/content checks that are better expressed here.
 
-##
-# This task file checks all the variables created to customize SUDO,
-# and plataform specific variables.
-##
-
-- name: Ensure sudo_config_file_name is specified and valid
+- name: Ensure sudo_config_file_name is valid
   ansible.builtin.assert:
-    quiet: yes
+    quiet: true
     that:
-      - sudo_config_file_name is defined
-      - sudo_config_file_name is string
-      - sudo_config_file_name is regex('[a-zA-Z0-9_]+')  # Composed of leters, numbers and underline
-    msg: "sudo_config_file_name must be speficied, must be a string and must contain only leters, numbers and underline"
+      - sudo_config_file_name is regex('^[a-zA-Z0-9_]+$')
+    fail_msg: >-
+      sudo_config_file_name must contain only letters, numbers, and underscore.
+      Got: {{ sudo_config_file_name }}
 
-- name: Check sudo_admin_group variable
+- name: Ensure sudo_admin_group is valid
   ansible.builtin.assert:
-    quiet: yes
+    quiet: true
     that:
-      - sudo_admin_group is defined
-      - sudo_admin_group is string
-      - sudo_admin_group is regex('[a-zA-Z0-9_]+')
-    msg: "sudo_admin_group must be specified, must be a string and must only contain letters, numbers and underline"
+      - sudo_admin_group is regex('^[a-zA-Z0-9_]+$')
+    fail_msg: >-
+      sudo_admin_group must contain only letters, numbers, and underscore.
+      Got: {{ sudo_admin_group }}
 
-
-- name: Check sudo_admin_password_required variable
+- name: Check if sudo_log value is valid
   ansible.builtin.assert:
-    quiet: yes
+    quiet: true
     that:
-      - sudo_admin_password_required is defined
-      - sudo_admin_password_required | type_debug == 'bool'
-    msg: "sudo_admin_password_required must be specified and must be a boolean"
-
-- name: Check if sudo_log value is valid.
-  ansible.builtin.assert:
-    quiet: yes
-    that:
-      - sudo_log is regex(pathre)  # Check if it is a directory
-    msg: "Invalid sudo log path ({{ sudo_log }})."
+      - sudo_log is regex(pathre)
+    fail_msg: >-
+      Invalid sudo log path ({{ sudo_log }}).
   when: sudo_log is defined
 
-- name: Validate sudo_default_parameters
+- name: Validate sudo_default_parameters entries
   ansible.builtin.assert:
-    quiet: yes
+    quiet: true
     that:
-      - sudo_default_parameters is sequence
+      - item is string
+    fail_msg: >-
+      Each entry in sudo_default_parameters must be a string.
+      Invalid entry: {{ item }}
+  loop: "{{ sudo_default_parameters | default([]) }}"
   when:
     - sudo_default_parameters is defined
     - sudo_default_parameters | length > 0

@@ -1,0 +1,8 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: true
+  vars:
+    sudo_config_file_name: 01_ansible
+  roles:
+    - role: guidugli.sudo

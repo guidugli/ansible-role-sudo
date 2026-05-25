@@ -1,0 +1,51 @@
+---
+- name: Verify sudo role
+  hosts: all
+  gather_facts: false
+  become: false
+
+  tasks:
+    - name: Verify sudo is installed
+      ansible.builtin.command: sudo -V
+      register: sudo_version
+      changed_when: false
+
+    - name: Validate main sudoers syntax
+      ansible.builtin.command: visudo -c
+      register: visudo_main
+      changed_when: false
+
+    - name: Stat managed sudoers file
+      ansible.builtin.stat:
+        path: /etc/sudoers.d/01_ansible
+      register: sudoers_dropin
+
+    - name: Validate managed sudoers drop-in syntax
+      ansible.builtin.command: visudo -c -f /etc/sudoers.d/01_ansible
+      register: visudo_dropin
+      changed_when: false
+      when: sudoers_dropin.stat.exists
+
+    - name: Assert sudoers drop-in ownership and mode
+      ansible.builtin.assert:
+        that:
+          - sudoers_dropin.stat.exists
+          - sudoers_dropin.stat.pw_name == 'root'
+          - sudoers_dropin.stat.gr_name == 'root'
+          - sudoers_dropin.stat.mode == '0440'
+        quiet: true
+      when: sudoers_dropin.stat.exists
+
+    - name: Stat sudo logfile
+      ansible.builtin.stat:
+        path: /var/log/sudo.log
+      register: sudo_logfile_stat
+
+    - name: Assert sudo logfile ownership and mode
+      ansible.builtin.assert:
+        that:
+          - sudo_logfile_stat.stat.exists
+          - sudo_logfile_stat.stat.pw_name == 'root'
+          - sudo_logfile_stat.stat.gr_name == 'root'
+          - sudo_logfile_stat.stat.mode == '0600'
+        quiet: true

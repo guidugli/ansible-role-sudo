@@ -1,0 +1,15 @@
+---
+- name: Start systemd-capable containers (podman)
+  hosts: localhost
+  gather_facts: false
+
+  tasks:
+    - name: Start containers with bootstrap entrypoint (sleep)
+      containers.podman.podman_container:
+        name: "{{ item }}"
+        hostname: "{{ item }}"
+        image: "{{ hostvars[item].container_image }}"
+        command: "sleep 1d"
+        state: started
+        recreate: true
+      loop: "{{ groups.get('molecule', []) }}"

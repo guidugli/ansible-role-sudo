@@ -1,0 +1,14 @@
+platform_matrix:
+  ubuntu:
+  - '26.04'
+  - '24.04'
+  debian:
+  - '13'
+  - '12'
+  fedora:
+  - '44'
+  - '43'
+images:
+  ubuntu: docker.io/library/ubuntu
+  debian: docker.io/library/debian
+  fedora: registry.fedoraproject.org/fedora

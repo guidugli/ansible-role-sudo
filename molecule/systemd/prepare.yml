@@ -1,0 +1,67 @@
+---
+- name: Prepare containers for systemd (install python + systemd)
+  hosts: all
+  gather_facts: false
+  become: false
+
+  tasks:
+    - name: Detect OS (works without python)
+      ansible.builtin.raw: cat /etc/os-release
+      register: osr
+      changed_when: false
+
+    - name: Bootstrap Debian/Ubuntu (python + systemd)
+      ansible.builtin.raw: "/bin/sh -c 'set -e; export DEBIAN_FRONTEND=noninteractive; apt-get update; apt-get install -y --no-install-recommends python3 python3-apt systemd systemd-sysv dbus ca-certificates iproute2'"
+      when: "'ID=debian' in osr.stdout or 'ID=ubuntu' in osr.stdout"
+
+    - name: Bootstrap Fedora (python + systemd)
+      ansible.builtin.raw: "/bin/sh -c 'set -e; dnf -y install python3 python3-dnf systemd dbus ca-certificates iproute'"
+      when: "'ID=fedora' in osr.stdout"
+
+    - name: Detect systemd binary path inside container
+      ansible.builtin.raw: >
+        /bin/sh -c 'set -e;
+        if [ -x /lib/systemd/systemd ]; then echo /lib/systemd/systemd;
+        elif [ -x /usr/lib/systemd/systemd ]; then echo /usr/lib/systemd/systemd;
+        elif [ -x /sbin/init ]; then echo /sbin/init;
+        else echo ""; fi'
+      register: systemd_path
+      changed_when: false
+
+    - name: Fail if systemd binary was not found after install
+      ansible.builtin.assert:
+        that:
+          - (systemd_path.stdout | trim | length) > 0
+        fail_msg: "systemd binary not found after install. Check package install output."
+        quiet: true
+
+    - name: Save systemd entrypoint as host fact (informational)
+      ansible.builtin.set_fact:
+        systemd_entrypoint: "{{ systemd_path.stdout | trim }}"
+      changed_when: false
+
+    - name: Reduce image size before commit (Debian/Ubuntu)
+      ansible.builtin.raw: "/bin/sh -c 'set -e; apt-get clean; rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*'"
+      when: "'ID=debian' in osr.stdout or 'ID=ubuntu' in osr.stdout"
+
+    - name: Reduce image size before commit (Fedora)
+      ansible.builtin.raw: "/bin/sh -c 'set -e; dnf clean all; rm -rf /var/cache/dnf/* /tmp/* /var/tmp/*'"
+      when: "'ID=fedora' in osr.stdout"
+
+- name: Commit prepared containers into systemd-enabled images (local)
+  hosts: localhost
+  gather_facts: false
+
+  tasks:
+    - name: Ensure there are containers to commit
+      ansible.builtin.assert:
+        that:
+          - (groups.get('molecule', []) | length) > 0
+        fail_msg: "No hosts found in group 'molecule'. Check molecule/systemd/inventory/hosts.yml group naming."
+        quiet: true
+
+    - name: Commit each prepared container to a local image
+      ansible.builtin.command:
+        cmd: "podman commit {{ item }} localhost/molecule-systemd-{{ item }}:latest"
+      loop: "{{ groups.get('molecule', []) }}"
+      changed_when: true

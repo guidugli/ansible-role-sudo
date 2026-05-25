@@ -1,11 +1,28 @@
 ---
-- name: Prepare
+- name: Shared prepare (bootstrap python + essentials)
   hosts: all
-  tasks:
+  gather_facts: false
+  become: false
 
-    - name: Update Ubuntu/Debian systems
-      ansible.builtin.apt:
-#        upgrade: dist
-        update_cache: true
-        cache_valid_time: 3600
-      when: ansible_pkg_mgr == "apt"
+  tasks:
+    - name: Detect OS via /etc/os-release (works without python)
+      ansible.builtin.raw: cat /etc/os-release
+      register: osr
+      changed_when: false
+
+    - name: Install python on Debian/Ubuntu
+      ansible.builtin.raw: >
+        /bin/sh -c 'set -e;
+        export DEBIAN_FRONTEND=noninteractive;
+        apt-get update;
+        apt-get install -y --no-install-recommends python3 python3-apt sudo ca-certificates iproute2;
+        rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*'
+      when: "'ID=debian' in osr.stdout or 'ID=ubuntu' in osr.stdout"
+
+    - name: Install python on Fedora
+      ansible.builtin.raw: >
+        /bin/sh -c 'set -e;
+        dnf install -y python3 python3-dnf sudo ca-certificates iproute;
+        dnf clean all;
+        rm -rf /var/cache/dnf/* /tmp/* /var/tmp/*'
+      when: "'ID=fedora' in osr.stdout"

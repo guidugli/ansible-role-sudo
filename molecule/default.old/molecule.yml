@@ -1,0 +1,22 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: ${MDRIVER:-podman}
+platforms:
+  - name: instance
+    image: docker.io/geerlingguy/docker-${MOLECULE_DISTRO:-fedora43}-ansible:latest
+    privileged: true
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    cgroupns_mode: host
+    command: ${MOLECULE_DOCKER_COMMAND:-""}
+    pre_build_image: true
+provisioner:
+  name: ansible
+verifier:
+  name: ansible
+lint: |
+  set -e
+  yamllint .
+  ansible-lint

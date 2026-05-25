@@ -1,7 +1,7 @@
 ---
 # Generated file. Do not edit directly.
-# Source template: meta_main.yml.j2
-# Generated on: 2026-05-24T21:27:56Z
+# Source template: {{ template_name }}
+# Generated on: {{ generated_on }}
 
 dependencies: []
 
@@ -20,18 +20,13 @@ galaxy_info:
   min_ansible_version: "2.14"
 
   platforms:
-    - name: Fedora
+{% for platform in platforms %}
+    - name: {{ platform.name }}
       versions:
-        - "44"
-        - "43"
-    - name: Ubuntu
-      versions:
-        - "resolute"
-        - "noble"
-    - name: Debian
-      versions:
-        - "trixie"
-        - "bookworm"
+{% for version in platform.versions %}
+        - {{ version | tojson }}
+{% endfor %}
+{% endfor %}
 
   galaxy_tags:
     - sudo

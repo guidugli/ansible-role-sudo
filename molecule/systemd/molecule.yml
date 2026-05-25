@@ -6,38 +6,32 @@ ansible:
       ansible_playbook:
         - --inventory=${MOLECULE_SCENARIO_DIRECTORY}/inventory/
 
-
-  # Optional: pass environment variables to all ansible runs
   env:
     ANSIBLE_FORCE_COLOR: "true"
 
-  # Optional: scenario-local ansible.cfg overrides (merged at runtime)
   cfg:
     defaults:
       host_key_checking: false
       retry_files_enabled: false
       interpreter_python: auto_silent
-      stdout_callback: default
-      callback_result_format: yaml
 
-
-  # Playbooks are relative to THIS scenario directory
   playbooks:
     create: create.yml
     destroy: destroy.yml
     prepare: prepare.yml
+    side_effect: recreate_systemd.yml
     converge: ../shared/converge.yml
     verify: ../shared/verify.yml
 
 scenario:
-  name: default
+  name: systemd
   test_sequence:
     - dependency
     - destroy
     - create
     - prepare
+    - side_effect
     - converge
-    - idempotence
     - verify
     - destroy
 

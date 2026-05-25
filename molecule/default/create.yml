@@ -1,0 +1,25 @@
+---
+- name: Create containers (podman)
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Start containers from inventory definitions
+      containers.podman.podman_container:
+        name: "{{ item }}"
+        hostname: "{{ item }}"
+        image: "{{ hostvars[item].container_image }}"
+        command: "{{ hostvars[item].container_command | default('sleep 1d') }}"
+        state: started
+      loop: "{{ groups.get('molecule', []) }}"
+
+    - name: Write Molecule instance config (enables molecule list/login)
+      vars:
+        instance_config_path: "{{ lookup('env', 'MOLECULE_INSTANCE_CONFIG') }}"
+      ansible.builtin.copy:
+        dest: "{{ instance_config_path }}"
+        mode: "0600"
+        content: |
+          {% for name in groups.get('molecule', []) %}
+          - instance: {{ name }}
+          {% endfor %}
+      when: (lookup('env', 'MOLECULE_INSTANCE_CONFIG') | default('') | length) > 0
