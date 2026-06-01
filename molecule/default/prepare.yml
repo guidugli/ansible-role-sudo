@@ -18,6 +18,7 @@
         apt-get install -y --no-install-recommends python3 python3-apt sudo ca-certificates iproute2;
         rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*'
       when: "'ID=debian' in osr.stdout or 'ID=ubuntu' in osr.stdout"
+      changed_when: true
 
     - name: Install python on Fedora
       ansible.builtin.raw: >
@@ -26,3 +27,4 @@
         dnf clean all;
         rm -rf /var/cache/dnf/* /tmp/* /var/tmp/*'
       when: "'ID=fedora' in osr.stdout"
+      changed_when: true

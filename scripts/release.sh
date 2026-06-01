@@ -1,33 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# release.sh
-#
-# Purpose:
-#   Prepare and publish a new tag-based release for the Ansible role.
-#
-# What it does:
-#   1) Validates working tree is clean (unless --allow-dirty is used)
-#   2) Refreshes generated metadata/inventories via scripts/update_release_metadata.sh
-#   3) Runs Molecule default scenario
-#   4) Stages generated changes
-#   5) Commits release-prep changes (optional if nothing changed)
-#   6) Creates an annotated Git tag
-#   7) Pushes commit(s) and tag to origin
-#
-# Usage examples:
-#   ./scripts/release.sh --version v1.1.0 --message "Reworked code and molecule tests"
-#   ./scripts/release.sh --version v1.1.0 --message "Release v1.1.0" --dry-run
-#   ./scripts/release.sh --version v1.1.0 --message "Release v1.1.0" --allow-dirty
-#
-# Notes:
-#   - The GitHub release workflow is triggered by pushing the tag.
-#   - Use semantic version tags like v1.2.3.
-#   - Test tags should use a different prefix (example: test-v1.2.3) and should NOT use this script.
-
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
-UPDATE_SCRIPT="${SCRIPT_DIR}/update_release_metadata.sh"
+UPDATE_SCRIPT="${REPO_ROOT}/scripts/update_release_metadata.sh"
 
 VERSION=""
 TAG_MESSAGE=""
@@ -42,20 +18,23 @@ DRY_RUN="false"
 VERBOSE="false"
 
 log() {
-  printf '%s\n' "$*"
+  printf '%s
+' "$*"
 }
 
 err() {
-  printf 'ERROR: %s\n' "$*" >&2
+  printf 'ERROR: %s
+' "$*" >&2
 }
 
 usage() {
-  sed -n '1,120p' "$0"
+  sed -n '1,220p' "$0"
 }
 
 run_cmd() {
   if [[ "$DRY_RUN" == "true" ]]; then
-    printf '[dry-run] %s\n' "$*"
+    printf '[dry-run] %s
+' "$*"
   else
     eval "$@"
   fi
@@ -133,7 +112,7 @@ require_cmd git
 require_cmd bash
 
 if [[ -z "$VERSION" ]]; then
-  err "--version is required (example: v1.1.0)"
+  err '--version is required (example: v1.2.0)'
   exit 2
 fi
 
@@ -152,17 +131,16 @@ fi
 
 cd "$REPO_ROOT"
 
-if [[ ! -f "$UPDATE_SCRIPT" ]]; then
+[[ -f "$UPDATE_SCRIPT" ]] || {
   err "Missing update script: $UPDATE_SCRIPT"
   exit 3
-fi
+}
 
-# Refresh index and check worktree cleanliness.
 git update-index -q --refresh || true
 
 if [[ "$ALLOW_DIRTY" != "true" ]]; then
   if ! git diff --quiet || ! git diff --cached --quiet; then
-    err "Working tree is not clean. Commit/stash your changes first or use --allow-dirty." 
+    err 'Working tree is not clean. Commit/stash your changes first or use --allow-dirty.'
     git status --short
     exit 4
   fi
@@ -174,62 +152,49 @@ if git rev-parse "$VERSION" >/dev/null 2>&1; then
 fi
 
 if git ls-remote --tags "$REMOTE" "refs/tags/$VERSION" | grep -q "$VERSION"; then
-  err "Tag already exists on remote '$REMOTE': $VERSION"
+  err "Tag already exists on remote ${REMOTE}: $VERSION"
   exit 6
 fi
 
-log "==> Refreshing generated metadata/inventories"
+log '==> Refreshing generated metadata and inventories'
 run_cmd '"$UPDATE_SCRIPT"'
 
 if [[ "$SKIP_TESTS" != "true" ]]; then
   require_cmd molecule
-  log "==> Running Molecule scenario: $SCENARIO"
+  log "> Running Molecule scenario: $SCENARIO"
   run_cmd "molecule test -s '$SCENARIO'"
 else
-  log "==> Skipping tests (requested)"
+  log '> Skipping tests (requested)'
 fi
 
-log "==> Staging generated release artifacts"
-# Stage all changes produced by the metadata refresh. If nothing changed, that's fine.
-run_cmd "git add meta/main.yml molecule/ templates/ scripts/ README.md .github/workflows/ 2>/dev/null || git add -A"
+log '==> Staging release artifacts'
+run_cmd 'git add -A'
 
-changed="false"
+changed='false'
 if ! git diff --cached --quiet; then
-  changed="true"
+  changed='true'
 fi
 
-if [[ "$changed" == "true" && "$SKIP_COMMIT" != "true" ]]; then
-  log "==> Creating release-prep commit"
+if [[ "$changed" == 'true' && "$SKIP_COMMIT" != 'true' ]]; then
+  log '> Creating release-prep commit'
   run_cmd "git commit -m '$COMMIT_MESSAGE'"
+elif [[ "$changed" == 'true' ]]; then
+  log '> Changes staged but commit skipped (requested)'
 else
-  if [[ "$changed" == "true" && "$SKIP_COMMIT" == "true" ]]; then
-    log "==> Changes staged but commit skipped (requested)"
-  else
-    log "==> No staged changes to commit"
-  fi
+  log '==> No staged changes to commit'
 fi
 
 log "==> Creating annotated tag: $VERSION"
 run_cmd "git tag -a '$VERSION' -m '$TAG_MESSAGE'"
 
-if [[ "$SKIP_PUSH" != "true" ]]; then
-  # Push current branch first, then push tag.
+if [[ "$SKIP_PUSH" != 'true' ]]; then
   current_branch="$(git rev-parse --abbrev-ref HEAD)"
-  log "==> Pushing branch '$current_branch' to '$REMOTE'"
+  log "> Pushing branch '$current_branch' to '$REMOTE'"
   run_cmd "git push '$REMOTE' '$current_branch'"
-  log "==> Pushing tag '$VERSION' to '$REMOTE'"
+  log "> Pushing tag '$VERSION' to '$REMOTE'"
   run_cmd "git push '$REMOTE' '$VERSION'"
 else
-  log "==> Skipping push (requested)"
+  log '==> Skipping push (requested)'
 fi
 
-log "==> Release preparation complete"
-log "Version      : $VERSION"
-log "Tag message  : $TAG_MESSAGE"
-log "Commit msg   : $COMMIT_MESSAGE"
-log "Remote       : $REMOTE"
-if [[ "$SKIP_PUSH" == "true" ]]; then
-  log "Next step    : push branch/tag manually when ready"
-else
-  log "Next step    : monitor GitHub Actions Release workflow and Galaxy import"
-fi
+log '==> Release preparation complete'

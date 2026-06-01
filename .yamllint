@@ -1,5 +1,5 @@
 ---
-# Based on ansible-lint config
+# Based on ansible-lint yaml rule compatibility requirements.
 extends: default
 
 rules:
@@ -9,23 +9,35 @@ rules:
   brackets:
     max-spaces-inside: 1
     level: error
+  comments:
+    min-spaces-from-content: 1
+  comments-indentation: disable
+  document-start:
+    present: true
   line-length:
     max: 120
     allow-non-breakable-words: true
     allow-non-breakable-inline-mappings: false
     level: warning
-  comments: disable
-  comments-indentation: disable
   new-line-at-end-of-file: disable
   new-lines:
     type: unix
+  octal-values:
+    forbid-implicit-octal: true
+    forbid-explicit-octal: true
   truthy:
     allowed-values:
       - 'true'
       - 'false'
       - 'yes'
       - 'no'
+    check-keys: false
 
 ignore: |
   .github/stale.yml
   .travis.yml
+  .git/
+  .molecule/
+  .venv/
+  molecule/*/inventory/
+  .ansible/

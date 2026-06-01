@@ -1,47 +1,68 @@
 #!/usr/bin/env python3
+"""Render Molecule inventories from molecule/shared/vars.yml."""
+from __future__ import annotations
+
 from pathlib import Path
+from typing import Any
+
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-VARS = ROOT / "molecule" / "shared" / "vars.yml"
+VARS_FILE = ROOT / 'molecule' / 'shared' / 'vars.yml'
+SCENARIOS = ('default', 'systemd')
 
-SCENARIOS = ["default", "systemd"]
 
-def host_block(name, image, version):
-    return {
-        name: {
-            "ansible_connection": "containers.podman.podman",
-            "container_image": f"{image}:{version}",
-            "container_command": "sleep 1d",
-        }
-    }
+def load_vars(path: Path) -> dict[str, Any]:
+    data = yaml.safe_load(path.read_text(encoding='utf-8'))
+    if not isinstance(data, dict):
+        raise ValueError(f'Expected top-level mapping in {path}')
+    return data
 
-def main():
-    cfg = yaml.safe_load(VARS.read_text(encoding="utf-8"))
-    matrix = cfg["platform_matrix"]
-    images = cfg["images"]
 
-    hosts = {}
+def build_inventory(data: dict[str, Any]) -> dict[str, Any]:
+    matrix = data.get('platform_matrix', {})
+    images = data.get('images', {})
+    if not isinstance(matrix, dict) or not isinstance(images, dict):
+        raise ValueError('platform_matrix and images must both be mappings')
+
+    hosts: dict[str, Any] = {}
     for distro, versions in matrix.items():
-        for v in versions:
-            hn = f"{distro}{v.replace('.','')}"
-            hosts.update(host_block(hn, images[distro], v))
+        if not isinstance(versions, list):
+            raise ValueError(f'Expected list of versions for {distro}')
+        if distro not in images:
+            raise ValueError(f'Missing image mapping for distro {distro}')
 
-    inventory = {
-        "all": {
-            "children": {
-                "molecule": {
-                    "hosts": hosts
-                }
+        for version in versions:
+            version_str = str(version)
+            host_name = f"{distro}{version_str.replace('.', '')}"
+            hosts[host_name] = {
+                'ansible_connection': 'containers.podman.podman',
+                'container_image': f"{images[distro]}:{version_str}",
+                'container_command': 'sleep 1d',
             }
-        }
-    }
 
-    for sc in SCENARIOS:
-        out = ROOT / "molecule" / sc / "inventory" / "hosts.yml"
-        out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(yaml.safe_dump(inventory, sort_keys=False), encoding="utf-8")
-        print(f"Wrote {out}")
+    return {'all': {'children': {'molecule': {'hosts': hosts}}}}
 
-if __name__ == "__main__":
+
+def dump_yaml(data: dict[str, Any]) -> str:
+    return yaml.safe_dump(
+        data,
+        sort_keys=False,
+        default_flow_style=False,
+        explicit_start=True,
+    )
+
+
+def main() -> None:
+    inventory = build_inventory(load_vars(VARS_FILE))
+    rendered = dump_yaml(inventory)
+
+    for scenario in SCENARIOS:
+        out_file = ROOT / 'molecule' / scenario / 'inventory' / 'hosts.yml'
+        out_file.parent.mkdir(parents=True, exist_ok=True)
+        out_file.write_text(rendered, encoding='utf-8')
+        print(f'Wrote {out_file}')
+
+
+if __name__ == '__main__':
     main()

@@ -9,3 +9,6 @@
 # Tool/cache dirs
 .cache/
 .molecule/
+
+# Ansible local role/cache
+.ansible/

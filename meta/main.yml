@@ -1,7 +1,6 @@
 ---
 # Generated file. Do not edit directly.
 # Source template: meta_main.yml.j2
-# Generated on: 2026-05-25T20:57:38Z
 
 dependencies: []
 
@@ -22,8 +21,7 @@ galaxy_info:
   platforms:
     - name: Fedora
       versions:
-        - "44"
-        - "43"
+        - "all"
     - name: Ubuntu
       versions:
         - "resolute"
@@ -31,13 +29,15 @@ galaxy_info:
     - name: Debian
       versions:
         - "trixie"
-        - "bookworm"
+        - "bullseye"
 
   galaxy_tags:
     - sudo
-    - privilege_escalation
+    - privilege
+    - escalation
     - security
     - system
     - linux
     - administration
-    - access_control
+    - access
+    - control
