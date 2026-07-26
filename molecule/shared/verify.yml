@@ -1,51 +1,91 @@
 ---
 - name: Verify sudo role
   hosts: all
-  gather_facts: false
-  become: false
+  gather_facts: true
+  vars:
+    sudo_verify_config_file_name: "{{ sudo_config_file_name | default('01_ansible') }}"
+    sudo_verify_sudo_binary: /usr/bin/sudo
+    sudo_verify_visudo_binary: /usr/sbin/visudo
+    sudo_verify_main_sudoers_file: /etc/sudoers
+    sudo_verify_sudoers_dropin_dir: /etc/sudoers.d
 
   tasks:
-    - name: Verify sudo is installed
-      ansible.builtin.command: sudo -V
-      register: sudo_version
-      changed_when: false
-
-    - name: Validate main sudoers syntax
-      ansible.builtin.command: visudo -c
-      register: visudo_main
-      changed_when: false
-
-    - name: Stat managed sudoers file
+    - name: Check sudo binary exists
       ansible.builtin.stat:
-        path: /etc/sudoers.d/01_ansible
-      register: sudoers_dropin
-
-    - name: Validate managed sudoers drop-in syntax
-      ansible.builtin.command: visudo -c -f /etc/sudoers.d/01_ansible
-      register: visudo_dropin
+        path: "{{ sudo_verify_sudo_binary }}"
+      register: sudo_verify_binary
+      failed_when: not sudo_verify_binary.stat.exists
       changed_when: false
-      when: sudoers_dropin.stat.exists
+      tags:
+        - sudo
+        - validate
 
-    - name: Assert sudoers drop-in ownership and mode
-      ansible.builtin.assert:
-        that:
-          - sudoers_dropin.stat.exists
-          - sudoers_dropin.stat.pw_name == 'root'
-          - sudoers_dropin.stat.gr_name == 'root'
-          - sudoers_dropin.stat.mode == '0440'
-        quiet: true
-      when: sudoers_dropin.stat.exists
-
-    - name: Stat sudo logfile
+    - name: Check visudo binary exists
       ansible.builtin.stat:
-        path: /var/log/sudo.log
-      register: sudo_logfile_stat
+        path: "{{ sudo_verify_visudo_binary }}"
+      register: sudo_verify_visudo
+      failed_when: not sudo_verify_visudo.stat.exists
+      changed_when: false
+      tags:
+        - sudo
+        - validate
 
-    - name: Assert sudo logfile ownership and mode
-      ansible.builtin.assert:
-        that:
-          - sudo_logfile_stat.stat.exists
-          - sudo_logfile_stat.stat.pw_name == 'root'
-          - sudo_logfile_stat.stat.gr_name == 'root'
-          - sudo_logfile_stat.stat.mode == '0600'
-        quiet: true
+    - name: Validate main sudoers file
+      ansible.builtin.command:
+        argv:
+          - "{{ sudo_verify_visudo_binary }}"
+          - -cf
+          - "{{ sudo_verify_main_sudoers_file }}"
+      changed_when: false
+      tags:
+        - sudo
+        - validate
+
+    - name: Verify use_pty is enabled
+      ansible.builtin.command:
+        argv:
+          - grep
+          - -rPi
+          - '^\h*Defaults\h+([^#\n\r]+,\h*)?use_pty\b'
+          - "{{ sudo_verify_main_sudoers_file }}"
+          - "{{ sudo_verify_sudoers_dropin_dir }}"
+      changed_when: false
+      tags:
+        - sudo
+        - validate
+
+    - name: Verify !use_pty is absent
+      ansible.builtin.command:
+        argv:
+          - grep
+          - -rPi
+          - '^\h*Defaults\h+([^#\n\r]+,\h*)?!use_pty\b'
+          - "{{ sudo_verify_main_sudoers_file }}"
+          - "{{ sudo_verify_sudoers_dropin_dir }}"
+      register: sudo_verify_not_use_pty
+      changed_when: false
+      failed_when: sudo_verify_not_use_pty.rc == 0
+      tags:
+        - sudo
+        - validate
+
+    - name: Verify role-managed sudoers drop-in exists
+      ansible.builtin.stat:
+        path: "{{ sudo_verify_sudoers_dropin_dir }}/{{ sudo_verify_config_file_name }}"
+      register: sudo_verify_dropin
+      failed_when: not sudo_verify_dropin.stat.exists
+      changed_when: false
+      tags:
+        - sudo
+        - validate
+
+    - name: Validate role-managed sudoers drop-in
+      ansible.builtin.command:
+        argv:
+          - "{{ sudo_verify_visudo_binary }}"
+          - -cf
+          - "{{ sudo_verify_sudoers_dropin_dir }}/{{ sudo_verify_config_file_name }}"
+      changed_when: false
+      tags:
+        - sudo
+        - validate

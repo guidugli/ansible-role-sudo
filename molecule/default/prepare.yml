@@ -1,17 +1,16 @@
 ---
-- name: Shared prepare (bootstrap python + essentials)
+- name: Shared prepare bootstrap
   hosts: all
   gather_facts: false
   become: false
-
   tasks:
-    - name: Detect OS via /etc/os-release (works without python)
+    - name: Detect OS via os-release
       ansible.builtin.raw: cat /etc/os-release
       register: osr
       changed_when: false
 
-    - name: Install python on Debian/Ubuntu
-      ansible.builtin.raw: >
+    - name: Install Python on Debian and Ubuntu
+      ansible.builtin.raw: >-
         /bin/sh -c 'set -e;
         export DEBIAN_FRONTEND=noninteractive;
         apt-get update;
@@ -20,8 +19,8 @@
       when: "'ID=debian' in osr.stdout or 'ID=ubuntu' in osr.stdout"
       changed_when: true
 
-    - name: Install python on Fedora
-      ansible.builtin.raw: >
+    - name: Install Python on Fedora
+      ansible.builtin.raw: >-
         /bin/sh -c 'set -e;
         dnf install -y python3 python3-dnf sudo ca-certificates iproute;
         dnf clean all;

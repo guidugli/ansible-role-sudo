@@ -1,2 +1,2 @@
 ---
-# handlers file for sudo
+# No handlers are required. Sudoers changes are validated before being written.

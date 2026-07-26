@@ -3,39 +3,45 @@ argument_specs:
   main:
     short_description: Install and configure sudo
     description:
-      - Validates role inputs and configures sudo and sudoers settings.
-
+      - Validates role inputs, installs sudo, and configures sudoers settings.
     options:
       sudo_config_file_name:
         type: str
-        required: true
+        default: 01_ansible
         description:
-          - Name of the sudoers drop-in file created under /etc/sudoers.d/.
-          - Must contain only letters, numbers, and underscore.
-
+          - Name of the role-managed sudoers drop-in file below /etc/sudoers.d.
       sudo_admin_group:
         type: str
-        required: true
+        default: admin
         description:
-          - Administrative group that will be granted sudo access.
-          - Must contain only letters, numbers, and underscore.
-
+          - Group granted broad sudo access by the role-managed sudoers drop-in rule.
       sudo_admin_password_required:
         type: bool
-        required: true
+        default: true
         description:
-          - Whether members of the administrative group must enter a password when using sudo.
-
+          - Whether members of sudo_admin_group must authenticate with a password.
       sudo_log:
         type: str
-        required: false
+        default: /var/log/sudo.log
         description:
-          - Optional path to the sudo log file.
-          - When defined, the role configures a sudoers setting for file-based logging.
-
+          - Path for sudo command logging. Set to an empty string to skip logfile management.
       sudo_default_parameters:
         type: list
-        required: false
         elements: str
+        default:
+          - "!visiblepw"
+          - always_set_home
+          - match_group_by_gid
+          - env_reset
+          - env_keep = "COLORS DISPLAY HOSTNAME HISTSIZE KDEDIR LS_COLORS"
+          - env_keep += "MAIL QTDIR USERNAME LANG LC_ADDRESS LC_CTYPE"
+          - env_keep += "LC_COLLATE LC_IDENTIFICATION LC_MEASUREMENT LC_MESSAGES"
+          - env_keep += "LC_MONETARY LC_NAME LC_NUMERIC LC_PAPER LC_TELEPHONE"
+          - env_keep += "LC_TIME LC_ALL LANGUAGE LINGUAS _XKB_CHARSET XAUTHORITY"
+          - secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"
+          - use_pty
+          - timestamp_timeout=5
+          - passwd_timeout=1
+          - umask=0077
         description:
-          - List of sudo Defaults directives to render into the main sudoers file.
+          - Defaults directives rendered into /etc/sudoers.

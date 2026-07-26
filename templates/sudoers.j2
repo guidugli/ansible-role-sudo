@@ -1,16 +1,11 @@
-#
-# This file MUST be edited with the 'visudo' command as root.
-#
-# Please consider adding local content in /etc/sudoers.d/ instead of
-# directly modifying this file.
-#
-# See the man page for details on how to write a sudoers file.
-#
-{% for dp in sudo_default_parameters|default([]) %}
-Defaults	{{ dp }}
+# This file MUST be edited with visudo as root.
+# Consider adding local content in /etc/sudoers.d/ instead of directly modifying this file.
+
+{% for sudo_default_parameter in sudo_default_parameters | default([]) %}
+Defaults {{ sudo_default_parameter }}
 {% endfor %}
 
 # User privilege specification
-root    ALL=(ALL:ALL) ALL
+root ALL=(ALL:ALL) ALL
 
 #includedir /etc/sudoers.d

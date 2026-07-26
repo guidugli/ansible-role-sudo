@@ -19,7 +19,6 @@ ansible:
     create: create.yml
     destroy: destroy.yml
     prepare: prepare.yml
-    side_effect: recreate_systemd.yml
     converge: ../shared/converge.yml
     verify: ../shared/verify.yml
 
@@ -30,8 +29,8 @@ scenario:
     - destroy
     - create
     - prepare
-    - side_effect
     - converge
+    - idempotence
     - verify
     - destroy
 

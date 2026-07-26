@@ -1,6 +1,6 @@
 ---
-- name: Test Playbook
+- name: Test playbook
   hosts: localhost
   remote_user: root
   roles:
-    - guidugli.sudo
+    - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}"

@@ -1,67 +1,49 @@
-# Ansible Role: `sudo`
+[![CI](https://github.com/guidugli/ansible-role-sudo/actions/workflows/CI.yml/badge.svg)](https://github.com/guidugli/ansible-role-sudo/actions/workflows/CI.yml)
+[![Release](https://img.shields.io/github/v/tag/guidugli/ansible-role-sudo?sort=semver)](https://github.com/guidugli/ansible-role-sudo/tags)
+[![Galaxy](https://img.shields.io/badge/galaxy-guidugli.sudo-blue.svg)](https://galaxy.ansible.com/ui/standalone/roles/guidugli/sudo/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-Install and configure `sudo` across multiple Linux distributions with a focus on **secure defaults** and **CIS-aligned configuration**.
+# Ansible Role: sudo
 
-This role supports:
-- Ubuntu (24.04, 26.04)
-- Debian (12, 13)
-- Fedora (43, 44)
-
-It is designed to be:
-- multi-distro compatible
-- container-friendly (tested via Molecule + Podman)
-- aligned with security recommendations (for example, sudo logging)
-
----
-
-## Features
-
-- Installs and configures `sudo`
-- Manages sudoers configuration via `/etc/sudoers.d/`
-- Applies configurable `Defaults` parameters
-- Optionally enforces sudo command logging
-- Validates all generated sudoers files using `visudo`
-- Enforces classic sudo behavior on Ubuntu 26.04+ when needed for compatibility with CIS-style logging requirements
-
----
-
-## Important: Ubuntu 26.04+ and `sudo-rs`
-
-Ubuntu 26.04 ships `sudo-rs` (Rust-based sudo) by default.
-
-This role is intended to support secure standards and CIS-aligned configuration. In particular, CIS-style guidance commonly expects a sudoers logfile directive such as:
-
-```text
-Defaults logfile="/var/log/sudo.log"
-```
-
-Because `sudo-rs` does not fully support the same sudoers feature set as classic sudo, this role is designed around **classic sudoers compatibility** for policy validation and configuration management.
-
----
+Install and configure `sudo` with CIS-aligned sudoers defaults, command logging, validation, and Molecule-based testing across supported Linux distributions. The role focuses on secure defaults, idempotent execution, and sudoers validation through `visudo`.
 
 ## Requirements
 
-- Ansible >= 2.14
-- Python available on target hosts
-- Root or privilege escalation capability to manage system packages and `/etc/sudoers*`
+- Ansible Core 2.14 or newer
+- Python available on managed hosts
+- `sudo` package available from the target operating system repositories
+- External privilege escalation (`become: true`) when managing:
+  - `/etc/sudoers`
+  - `/etc/sudoers.d/*`
+  - `/var/log/sudo.log`
+  - system packages
 
----
+Supported Molecule platforms:
+- Ubuntu 26.04
+- Ubuntu 24.04
+- Debian 13
+- Debian 12
+- Fedora 44
+- Fedora 43
 
-## Role Variables
+## Variables
 
-### Default Variables (`defaults/main.yml`)
+| Variable | Type | Default | Description |
+|-----------|--------|-----------|-------------|
+| `sudo_config_file_name` | string | `01_ansible` | Name of the managed sudoers drop-in file under `/etc/sudoers.d`. |
+| `sudo_admin_group` | string | `admin` | Group granted sudo access. |
+| `sudo_admin_password_required` | boolean | `true` | Require authentication for sudo access. |
+| `sudo_log` | string | `/var/log/sudo.log` | Sudo command log location. Set to an empty string to disable logfile management. |
+| `sudo_default_parameters` | list[string] | see below | Sudoers `Defaults` directives rendered into `/etc/sudoers`. |
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `sudo_config_file_name` | `01_ansible` | Name of the sudoers drop-in file created under `/etc/sudoers.d/` |
-| `sudo_admin_group` | `admin` | Group granted broad sudo access |
-| `sudo_admin_password_required` | `true` | Whether members of the admin group must authenticate with a password |
-| `sudo_log` | `/var/log/sudo.log` | Path used for sudo command logging |
-| `sudo_default_parameters` | see below | List of `Defaults` directives rendered into `/etc/sudoers` |
-
-### Default sudo parameters
+Default `sudo_default_parameters`:
 
 ```yaml
+sudo_config_file_name: 01_ansible
+sudo_admin_group: admin
+sudo_admin_password_required: true
+sudo_log: /var/log/sudo.log
+ 
 sudo_default_parameters:
   - "!visiblepw"
   - always_set_home
@@ -74,77 +56,56 @@ sudo_default_parameters:
   - env_keep += "LC_TIME LC_ALL LANGUAGE LINGUAS _XKB_CHARSET XAUTHORITY"
   - secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"
   - use_pty
+  - timestamp_timeout=5
+  - passwd_timeout=1
+  - umask=0077
 ```
 
-### Internal Variables (`vars/main.yml`)
-
-These variables are used internally by the role.
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `pathre` | `^(?:[/\])` | Regular expression used to validate filesystem paths |
-| `_sudo_default_groups` | distro map | Reference mapping of common admin groups by distribution |
-| `sudo_default_groups` | derived | Derived fallback list of default sudo-capable groups |
-
-#### Internal group mapping reference
-
+### Internal Variables
+ 
+These variables are maintained in `vars/main.yml` and are not intended to be overridden.
+ 
 ```yaml
-_sudo_default_groups:
-  default: ['wheel']
-  Debian: ['admin', 'sudo']
-  Ubuntu: ['admin', 'sudo']
+sudo_path_regex: '^/'
+ 
+sudo_default_groups_map:
+  default:
+    - wheel
+  Debian:
+    - admin
+    - sudo
+  Ubuntu:
+    - admin
+    - sudo
+  RedHat:
+    - wheel
+  Fedora:
+    - wheel
 ```
-
-> Note: the current role logic primarily relies on `sudo_admin_group` supplied through defaults or overrides. The `sudo_default_groups` mapping exists as internal reference/fallback logic in `vars/main.yml`.
-
----
-
-## Validation
-
-The role validates inputs in two layers:
-
-1. **`meta/argument_specs.yml`**
-   - validates required variables and basic types
-2. **`tasks/asserts.yml`**
-   - validates regex/content constraints such as:
-     - `sudo_config_file_name`
-     - `sudo_admin_group`
-     - `sudo_log`
-     - `sudo_default_parameters`
-
-All rendered sudoers files are also validated with:
-
-```bash
-visudo -cf <file>
-```
-
-This helps prevent invalid sudoers content from being deployed.
-
----
 
 ## Example Playbook
 
 ```yaml
+---
 - name: Configure sudo securely
   hosts: all
   become: true
-
   roles:
     - role: guidugli.sudo
       vars:
         sudo_config_file_name: 01_ansible
-        sudo_admin_group: admin
+        sudo_admin_group: sudo
         sudo_admin_password_required: true
         sudo_log: /var/log/sudo.log
 ```
 
-### Example with passwordless admin group
+Passwordless sudo example:
 
 ```yaml
-- name: Configure passwordless sudo for an admin group
+---
+- name: Configure passwordless sudo for wheel
   hosts: all
   become: true
-
   roles:
     - role: guidugli.sudo
       vars:
@@ -152,140 +113,69 @@ This helps prevent invalid sudoers content from being deployed.
         sudo_admin_password_required: false
 ```
 
+### Disable Sudo Logging
+ 
+```yaml
 ---
-
-## What the role configures
-
-### 1. Admin group rule in `/etc/sudoers.d/<file>`
-
-Example result:
-
-```text
-%admin ALL=(ALL:ALL) ALL
+- name: Configure sudo without logfile management
+  hosts: all
+  become: true
+ 
+  roles:
+    - role: guidugli.sudo
+      vars:
+        sudo_log: ""
 ```
 
-or, when passwordless sudo is enabled:
+## Molecule Testing
 
-```text
-%admin ALL=(ALL:ALL) NOPASSWD: ALL
-```
+This role uses Molecule with Podman and shared converge/verify logic:
 
-### 2. Main `/etc/sudoers` file from template
+- `molecule/shared/converge.yml`
+- `molecule/shared/verify.yml`
+- `molecule/default/`
+- `molecule/systemd/`
 
-The role deploys the main sudoers file from `templates/sudoers.j2` and includes:
-
-- the configured `Defaults` parameters
-- the `root` rule
-- `#includedir /etc/sudoers.d`
-
-### 3. Optional logfile setting
-
-When `sudo_log` is defined, the role adds a sudoers logging setting under the managed drop-in file.
-
----
-
-## Testing
-
-This role uses **Molecule + Podman**.
-
-### Supported scenarios
-
-- `default`
-- `systemd`
-
-Shared converge/verify logic is stored in `molecule/shared/`, while scenario-specific bootstrap and container lifecycle logic remains in the respective scenario directories.
-
-### Run tests locally
-
-```bash
-./scripts/run_local.sh
-```
-
-Or run scenarios individually:
+Run tests:
 
 ```bash
 molecule test -s default
 molecule test -s systemd
 ```
 
----
+The verify play validates:
+- `sudo` binary exists
+- `visudo` binary exists
+- `/etc/sudoers` passes validation
+- `Defaults use_pty` is present
+- `Defaults !use_pty` is absent
+- Managed sudoers drop-in exists
+- Managed sudoers drop-in passes `visudo` validation
 
-## Release metadata workflow
+## Execution notes
 
-This repository uses generated metadata based on the shared Molecule OS matrix.
+### Privilege model
 
-### Source of truth
+The role does not enforce privilege escalation internally. Tasks that install packages or manage `/etc/sudoers`, `/etc/sudoers.d`, and `/var/log/sudo.log` require sufficient external privilege. In production playbooks, set `become: true` at the play or role-call level when needed.
 
-```text
-molecule/shared/vars.yml
-```
-
-This drives:
-- tested platform matrix
-- generated scenario inventories
-- generated `meta/main.yml`
-
-### Refresh metadata
-
+### Sudoers Validation
+ 
+All role-managed sudoers content is validated before deployment using:
+ 
 ```bash
-./scripts/update_release_metadata.sh
+visudo -cf
 ```
+ 
+Invalid sudoers content will not be written to the target host. 
 
-### Release helper
+### Container and systemd behavior
 
-```bash
-./scripts/release.sh --version v1.1.0 --message "Release v1.1.0"
-```
-
----
-
-## Relevant project structure
-
-```text
-defaults/
-  main.yml
-
-vars/
-  main.yml
-
-tasks/
-  main.yml
-  asserts.yml
-  sudo.yml
-
-templates/
-  sudoers.j2
-  meta_main.yml.j2
-
-meta/
-  argument_specs.yml
-  main.yml
-
-molecule/
-  shared/
-  default/
-  systemd/
-```
-
----
-
-## Design principles
-
-- Secure-by-default configuration
-- Validation before deployment
-- CIS-oriented sudo policy support
-- Multi-distro compatibility
-- Reproducible Molecule-based test coverage
-- Generated Galaxy metadata from the tested OS matrix
-
----
+The role does not manage services and does not call `systemctl`, `service`, `mount`, or `sysctl`. It is suitable for non-systemd containers. The systemd Molecule scenario is retained for template alignment and future compatibility coverage, but no systemd-specific behavior is required for the current role.
 
 ## License
-
+ 
 MIT
-
----
-
+ 
 ## Author
-
+ 
 Carlos Guidugli

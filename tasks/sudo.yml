@@ -1,43 +1,33 @@
 ---
-# tasks/sudo.yml
-# Purpose:
-#   Install and configure sudo in a CIS-aligned way.
-#
-# Notes:
-#   - On Ubuntu 26.04+, sudo-rs is the default sudo provider.
-#   - This role requires classic sudoers support for Defaults logfile=...
-#   - Therefore, the role removes sudo-rs on Ubuntu 26.04+ and keeps classic sudo.
-
 - name: Refresh apt cache on Debian-family systems
   ansible.builtin.apt:
     update_cache: true
+    cache_valid_time: 3600
   when:
-    - ansible_facts.get('os_family', '') == 'Debian'
+    - ansible_facts['os_family'] == 'Debian'
+  tags:
+    - sudo
+    - install
 
 - name: Install sudo on Debian-family systems
   ansible.builtin.apt:
     name: sudo
     state: present
   when:
-    - ansible_facts.get('os_family', '') == 'Debian'
-
-- name: Remove sudo-rs on Ubuntu 26.04+ (role requires classic sudo for CIS logfile support)
-  ansible.builtin.apt:
-    name: sudo-rs
-    state: absent
-    purge: true
-    autoremove: true
-    update_cache: true
-  when:
-    - ansible_facts.get('distribution', '') == 'Ubuntu'
-    - ansible_facts.get('distribution_version', '0') is version('26.04', '>=')
+    - ansible_facts['os_family'] == 'Debian'
+  tags:
+    - sudo
+    - install
 
 - name: Install sudo on non-Debian systems
   ansible.builtin.package:
     name: sudo
     state: present
   when:
-    - ansible_facts.get('os_family', '') != 'Debian'
+    - ansible_facts['os_family'] != 'Debian'
+  tags:
+    - sudo
+    - install
 
 - name: Configure admin group sudo rule
   vars:
@@ -53,6 +43,9 @@
     owner: root
     group: root
     validate: /usr/sbin/visudo -cf %s
+  tags:
+    - sudo
+    - config
 
 - name: Deploy main sudoers file
   ansible.builtin.template:
@@ -64,6 +57,9 @@
     mode: '0440'
     force: true
     validate: /usr/sbin/visudo -cf %s
+  tags:
+    - sudo
+    - config
 
 - name: Ensure sudo logfile file exists
   ansible.builtin.file:
@@ -74,16 +70,26 @@
     mode: '0600'
     access_time: preserve
     modification_time: preserve
-  when: sudo_log is defined
+  when:
+    - sudo_log is defined
+    - sudo_log | length > 0
+  tags:
+    - sudo
+    - config
 
 - name: Ensure sudo logfile setting is configured
   ansible.builtin.lineinfile:
     path: "/etc/sudoers.d/{{ sudo_config_file_name }}"
-    regexp: '^Defaults\\s+logfile='
-    line: 'Defaults log_host, log_year, logfile={{ sudo_log }}'
+    regexp: '^Defaults\s+log_host,\s*log_year,\s*logfile='
+    line: 'Defaults log_host, log_year, logfile="{{ sudo_log }}"'
     mode: '0440'
     create: true
     owner: root
     group: root
     validate: /usr/sbin/visudo -cf %s
-  when: sudo_log is defined
+  when:
+    - sudo_log is defined
+    - sudo_log | length > 0
+  tags:
+    - sudo
+    - config

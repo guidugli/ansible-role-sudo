@@ -1,5 +1,5 @@
 ---
-- name: Destroy containers (podman)
+- name: Destroy containers with Podman
   hosts: localhost
   gather_facts: false
   tasks:
@@ -8,15 +8,3 @@
         name: "{{ item }}"
         state: absent
       loop: "{{ groups.get('molecule', []) }}"
-
-- name: Clear Molecule instance config (cleanup for molecule list/login)
-  hosts: localhost
-  gather_facts: false
-  vars:
-    instance_config_path: "{{ lookup('env', 'MOLECULE_INSTANCE_CONFIG') }}"
-  tasks:
-    - name: Remove instance config file if present
-      ansible.builtin.file:
-        path: "{{ instance_config_path }}"
-        state: absent
-      when: instance_config_path | default('') | length > 0

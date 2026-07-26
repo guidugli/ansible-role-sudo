@@ -1,5 +1,5 @@
 ---
-- name: Create containers (podman)
+- name: Create containers with Podman
   hosts: localhost
   gather_facts: false
   tasks:
@@ -11,15 +11,3 @@
         command: "{{ hostvars[item].container_command | default('sleep 1d') }}"
         state: started
       loop: "{{ groups.get('molecule', []) }}"
-
-    - name: Write Molecule instance config (enables molecule list/login)
-      vars:
-        instance_config_path: "{{ lookup('env', 'MOLECULE_INSTANCE_CONFIG') }}"
-      ansible.builtin.copy:
-        dest: "{{ instance_config_path }}"
-        mode: "0600"
-        content: |
-          {% for name in groups.get('molecule', []) %}
-          - instance: {{ name }}
-          {% endfor %}
-      when: (lookup('env', 'MOLECULE_INSTANCE_CONFIG') | default('') | length) > 0

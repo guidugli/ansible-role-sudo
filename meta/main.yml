@@ -1,23 +1,17 @@
 ---
 # Generated file. Do not edit directly.
 # Source template: meta_main.yml.j2
-
 dependencies: []
-
 galaxy_info:
   role_name: sudo
   namespace: guidugli
   author: guidugli
   company: Creuzo Tech
-
   description: >-
-    Install and configure sudo on Linux distributions.
-    This role focuses on package installation and configuration management,
-    with multi-distribution support and container-friendly testability.
-
+    Install and configure sudo with CIS-aligned sudoers defaults, command logging,
+    and Molecule coverage across supported Linux containers.
   license: MIT
-  min_ansible_version: "2.14"
-
+  min_ansible_version: '2.14'
   platforms:
     - name: Fedora
       versions:
@@ -29,15 +23,13 @@ galaxy_info:
     - name: Debian
       versions:
         - "trixie"
-        - "bullseye"
-
+        - "bookworm"
   galaxy_tags:
     - sudo
-    - privilege
-    - escalation
-    - security
-    - system
+    - sudoers
     - linux
-    - administration
-    - access
-    - control
+    - security
+    - compliance
+    - hardening
+    - cis
+    - privilege

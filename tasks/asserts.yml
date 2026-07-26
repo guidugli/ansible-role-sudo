@@ -1,14 +1,4 @@
 ---
-# tasks/asserts.yml
-#
-# Purpose:
-#   Extra validation that is not fully covered by meta/argument_specs.yml.
-#
-# Notes:
-#   - Basic type/required validation should be handled by validate_argument_spec
-#     using meta/argument_specs.yml.
-#   - This file keeps only regex/content checks that are better expressed here.
-
 - name: Ensure sudo_config_file_name is valid
   ansible.builtin.assert:
     quiet: true
@@ -17,6 +7,9 @@
     fail_msg: >-
       sudo_config_file_name must contain only letters, numbers, and underscore.
       Got: {{ sudo_config_file_name }}
+  tags:
+    - sudo
+    - validate
 
 - name: Ensure sudo_admin_group is valid
   ansible.builtin.assert:
@@ -26,25 +19,37 @@
     fail_msg: >-
       sudo_admin_group must contain only letters, numbers, and underscore.
       Got: {{ sudo_admin_group }}
+  tags:
+    - sudo
+    - validate
 
-- name: Check if sudo_log value is valid
+- name: Check sudo_log path when configured
   ansible.builtin.assert:
     quiet: true
     that:
-      - sudo_log is regex(pathre)
+      - sudo_log is string
+      - sudo_log | length == 0 or sudo_log is regex(sudo_path_regex)
     fail_msg: >-
-      Invalid sudo log path ({{ sudo_log }}).
+      sudo_log must be an absolute path or an empty string to skip logfile management.
+      Got: {{ sudo_log }}
   when: sudo_log is defined
+  tags:
+    - sudo
+    - validate
 
 - name: Validate sudo_default_parameters entries
   ansible.builtin.assert:
     quiet: true
     that:
       - item is string
+      - item | length > 0
     fail_msg: >-
-      Each entry in sudo_default_parameters must be a string.
+      Each entry in sudo_default_parameters must be a non-empty string.
       Invalid entry: {{ item }}
   loop: "{{ sudo_default_parameters | default([]) }}"
   when:
     - sudo_default_parameters is defined
     - sudo_default_parameters | length > 0
+  tags:
+    - sudo
+    - validate

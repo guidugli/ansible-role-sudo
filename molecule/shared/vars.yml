@@ -5,7 +5,7 @@ platform_matrix:
         - '24.04'
     debian:
         - '13'
-        - '11'
+        - '12'
     fedora:
         - '44'
         - '43'

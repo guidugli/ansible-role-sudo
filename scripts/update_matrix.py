@@ -58,22 +58,43 @@ def html_to_text(html: str) -> str:
 
 
 def latest_two_debian(html: str) -> list[str]:
-    text = html_to_text(html).lower()
-    stable = re.search(r"stable[^\d]*(\d+)", text)
-    oldstable = re.search(r"oldstable[^\d]*(\d+)", text)
-    result: list[str] = []
-    if stable:
-        result.append(stable.group(1))
-    if oldstable:
-        result.append(oldstable.group(1))
-    if len(result) < 2:
-        for value in re.findall(r"\b(\d{2})\b", text):
-            if value not in result:
-                result.append(value)
-            if len(result) == 2:
-                break
-    return result[:2]
+    """
+    Return [stable, oldstable] from Debian releases page.
 
+    Debian's 'Index of releases' table contains rows whose Status cell includes:
+      - 'Current <q>stable</q> release'
+      - 'Current <q>oldstable</q> release'
+    [1](https://www.debian.org/releases/)
+    """
+    import re
+
+    # Extract each table row separately so we never match across rows.
+    rows = re.findall(r"(?is)<tr>\s*(.*?)\s*</tr>", html)
+
+    stable = None
+    oldstable = None
+
+    for row in rows:
+        # Find the first <td>...</td> which is the version for that row.
+        m_ver = re.search(r"(?is)<td>\s*([0-9]+(?:\.[0-9]+)?)\s*</td>", row)
+        if not m_ver:
+            continue
+        ver = m_ver.group(1)
+
+        # Look for the status markers inside THIS row only
+        if re.search(r"(?is)Current\s*<q>\s*stable\s*</q>\s*release", row):
+            stable = ver
+
+        if re.search(r"(?is)Current\s*<q>\s*oldstable\s*</q>\s*release", row):
+            oldstable = ver
+
+    if not stable or not oldstable:
+        raise RuntimeError(
+            "Unable to parse Debian stable/oldstable from debian.org/releases "
+            f"(stable={stable!r}, oldstable={oldstable!r})."
+        )
+
+    return [stable, oldstable]
 
 def latest_two_fedora(html: str) -> list[str]:
     versions = re.findall(r">\s*(\d{2})\s*<", html)

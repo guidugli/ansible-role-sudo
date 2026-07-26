@@ -1,34 +1,23 @@
 ---
-# defaults file for sudo
-#
-# Security posture:
-# - Keeps sudo command auditing enabled by default
-# - Uses PTY for sudo commands (CIS-oriented)
-# - Enables I/O logging for better forensic visibility
-# - Reduces sudo credential lifetime
-# - Keeps restrictive secure_path and umask defaults
-#
-
-# Any role-managed sudoers settings are written under /etc/sudoers.d using this file name.
+# Managed sudoers drop-in file name under /etc/sudoers.d.
 sudo_config_file_name: 01_ansible
 
 # Group granted broad sudo access.
 sudo_admin_group: admin
 
-# Specify if password will be required for admin group
+# Whether members of sudo_admin_group must authenticate with a password.
 sudo_admin_password_required: true
 
-# if defined, add sudo configuration to
-# generate log at the defined location
+# Path for sudo command logging. Set to an empty string to skip logfile management.
 sudo_log: /var/log/sudo.log
 
-# This variable holds the default parameters to be set.
+# Defaults directives rendered into /etc/sudoers.
 sudo_default_parameters:
   - "!visiblepw"
   - always_set_home
   - match_group_by_gid
   - env_reset
-  - env_keep =  "COLORS DISPLAY HOSTNAME HISTSIZE KDEDIR LS_COLORS"
+  - env_keep = "COLORS DISPLAY HOSTNAME HISTSIZE KDEDIR LS_COLORS"
   - env_keep += "MAIL QTDIR USERNAME LANG LC_ADDRESS LC_CTYPE"
   - env_keep += "LC_COLLATE LC_IDENTIFICATION LC_MEASUREMENT LC_MESSAGES"
   - env_keep += "LC_MONETARY LC_NAME LC_NUMERIC LC_PAPER LC_TELEPHONE"
