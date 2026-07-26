@@ -17,4 +17,5 @@ sudo_default_groups_map:
   Fedora:
     - wheel
 
-sudo_default_groups: "{{ sudo_default_groups_map.get(ansible_facts['distribution'], sudo_default_groups_map['default']) }}"
+sudo_default_groups: >
+  "{{ sudo_default_groups_map.get(ansible_facts['distribution'], sudo_default_groups_map['default']) }}"
